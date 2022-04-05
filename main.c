@@ -27,23 +27,25 @@ typedef struct DatabaseDefinition
 
 typedef struct DBEngine
 {
-  void (*createDb)(DBEngine *self, char *dbName);
-  void (*createTable)(DBEngine *self, char *dbName, char *tableName);
+  void (*createDb)(void *self, char *dbName);
+  void (*createTable)(void *self, char *dbName, char *tableName);
   int (*isDbListEmpty)();
   void (*createDbList)();
   int (*dbExists)(char *dbName);
 } DBEngine;
 
-void createDb(DBEngine *self, char *dbName)
+void createDb(void *self, char *dbName)
 {
-  if (self->isDbListEmpty())
+  DBEngine *this = (DBEngine *)self;
+
+  if (this->isDbListEmpty())
   {
-    self->createDbList();
+    this->createDbList();
   }
 
   FILE *fp = fopen(dbListFileName, "rb");
 
-  if (!(self->dbExists(dbName)))
+  if (!(this->dbExists(dbName)))
   {
     DatabaseDefinition databaseDefinition;
     fread(&databaseDefinition, sizeof(DatabaseDefinition), 1, fp);
@@ -62,7 +64,7 @@ void createDb(DBEngine *self, char *dbName)
   fclose(fp);
 }
 
-void createTable(DBEngine *self, char *dbName, char *tableName)
+void createTable(void *self, char *dbName, char *tableName)
 {
   // Check if db exists
   // Check if table name exists

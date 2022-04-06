@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "memory.h": "c",
-    "corecrt_memory.h": "c"
+    "corecrt_memory.h": "c",
+    "stdlib.h": "c"
   }
 }

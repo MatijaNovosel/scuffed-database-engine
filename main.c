@@ -7,6 +7,21 @@
 #define dbNameCharLimit 255
 #define dbDefinitionListLimit 255
 
+int fileEmpty(FILE *fp)
+{
+  if (NULL != fp)
+  {
+    fseek(fp, 0, SEEK_END);
+    int size = ftell(fp);
+
+    if (size == 0)
+    {
+      return 1;
+    }
+    return 0;
+  }
+}
+
 int fileExists(char *fileName)
 {
   FILE *file;
@@ -30,7 +45,7 @@ typedef struct
 typedef struct
 {
   DatabaseDefinition databases[dbDefinitionListLimit];
-  int tableCount;
+  int databaseCount;
 } DatabaseDefinitionContainer;
 
 typedef struct
@@ -40,6 +55,7 @@ typedef struct
   void (*createDb)(void *self, char *dbName);
   void (*createTable)(void *self, char *dbName, char *tableName);
   void (*createDbList)();
+  void (*applyDbChanges)(void *self);
   int (*dbExists)(void *self, char *dbName);
   void (*openConnection)(void *self);
   void (*closeConnection)(void *self);
@@ -49,22 +65,13 @@ void createDb(void *self, char *dbName)
 {
   DBEngine *this = (DBEngine *)self;
 
-  if (this->dbExists(self, dbName))
-  {
-    DatabaseDefinition databaseDefinition;
-    fread(&databaseDefinition, sizeof(DatabaseDefinition), 1, this->dbList);
-    printf("%s", databaseDefinition.name);
-  }
-  else
-  {
-    DatabaseDefinition *databaseDefinition = malloc(sizeof(DatabaseDefinition));
-    databaseDefinition->tableCount = 1;
+  DatabaseDefinition databaseDefinition;
+  databaseDefinition.tableCount = 1;
+  strcpy(databaseDefinition.name, dbName);
 
-    strcpy(databaseDefinition->name, dbName);
-    printf("%s\n", databaseDefinition->name);
+  this->dbContainer->databases[this->dbContainer->databaseCount] = databaseDefinition;
 
-    fwrite(databaseDefinition, sizeof(DatabaseDefinition), 1, this->dbList);
-  }
+  this->applyDbChanges(this);
 }
 
 void createTable(void *self, char *dbName, char *tableName)
@@ -87,7 +94,7 @@ int dbExists(void *self, char *dbName)
   int exists = 0;
 
   // Make a better algorithm ...
-  for (int i = 0; i < this->dbContainer->tableCount; i++)
+  for (int i = 0; i < this->dbContainer->databaseCount; i++)
   {
     if (!strcmp(this->dbContainer->databases[i].name, dbName))
     {
@@ -107,8 +114,17 @@ void openConnection(void *self)
     this->createDbList();
   }
   this->dbList = fopen(dbListFileName, "wb+");
+
+  if (fileEmpty(this->dbList))
+  {
+    DatabaseDefinitionContainer *container = malloc(sizeof(DatabaseDefinitionContainer));
+    container->databaseCount = 0;
+    fwrite(container, sizeof(DatabaseDefinitionContainer), 1, this->dbList);
+  }
+
   DatabaseDefinitionContainer *container = malloc(sizeof(DatabaseDefinitionContainer));
   fread(container, sizeof(DatabaseDefinitionContainer), 1, this->dbList);
+
   this->dbContainer = container;
 }
 
@@ -116,6 +132,12 @@ void closeConnection(void *self)
 {
   DBEngine *this = (DBEngine *)self;
   fclose(this->dbList);
+}
+
+void applyDbChanges(void *self)
+{
+  DBEngine *this = (DBEngine *)self;
+  // Write to file
 }
 
 DBEngine *ConstructDBEngine()
@@ -127,6 +149,7 @@ DBEngine *ConstructDBEngine()
   dbEngine->dbExists = &dbExists;
   dbEngine->openConnection = &openConnection;
   dbEngine->closeConnection = &closeConnection;
+  dbEngine->applyDbChanges = &applyDbChanges;
   return dbEngine;
 }
 

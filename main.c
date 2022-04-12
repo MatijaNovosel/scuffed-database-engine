@@ -5,6 +5,7 @@
 #define dbListFileName "dbList.dat"
 #define bufferLimit 255
 #define dbNameCharLimit 255
+#define dbDefinitionListLimit 255
 
 int fileExists(char *fileName)
 {
@@ -28,7 +29,14 @@ typedef struct
 
 typedef struct
 {
+  DatabaseDefinition databases[dbDefinitionListLimit];
+  int tableCount;
+} DatabaseDefinitionContainer;
+
+typedef struct
+{
   FILE *dbList;
+  DatabaseDefinitionContainer *dbContainer;
   void (*createDb)(void *self, char *dbName);
   void (*createTable)(void *self, char *dbName, char *tableName);
   void (*createDbList)();
@@ -55,13 +63,7 @@ void createDb(void *self, char *dbName)
     strcpy(databaseDefinition->name, dbName);
     printf("%s\n", databaseDefinition->name);
 
-    fwrite(databaseDefinition, sizeof(databaseDefinition), 1, this->dbList);
-
-    DatabaseDefinition dd;
-
-    rewind(this->dbList);
-    fread(&dd, sizeof(DatabaseDefinition), 1, this->dbList);
-    printf("%s", dd.name);
+    fwrite(databaseDefinition, sizeof(DatabaseDefinition), 1, this->dbList);
   }
 }
 
@@ -81,7 +83,20 @@ void createDbList()
 int dbExists(void *self, char *dbName)
 {
   DBEngine *this = (DBEngine *)self;
-  return 0;
+
+  int exists = 0;
+
+  // Make a better algorithm ...
+  for (int i = 0; i < this->dbContainer->tableCount; i++)
+  {
+    if (!strcmp(this->dbContainer->databases[i].name, dbName))
+    {
+      exists = 1;
+      break;
+    }
+  }
+
+  return exists;
 }
 
 void openConnection(void *self)
@@ -92,6 +107,9 @@ void openConnection(void *self)
     this->createDbList();
   }
   this->dbList = fopen(dbListFileName, "wb+");
+  DatabaseDefinitionContainer *container = malloc(sizeof(DatabaseDefinitionContainer));
+  fread(container, sizeof(DatabaseDefinitionContainer), 1, this->dbList);
+  this->dbContainer = container;
 }
 
 void closeConnection(void *self)

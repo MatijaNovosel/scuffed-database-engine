@@ -88,6 +88,20 @@ void applyDbChanges(void *self)
   fwrite(this->dbContainer, sizeof(DatabaseDefinitionContainer), 1, this->dbList);
 }
 
+char **searchDatabases(void *self, char *dbName)
+{
+  char **res = NULL;
+  if (dbName == NULL)
+  {
+    // Get all
+  }
+  else
+  {
+    // Find specific ones
+  }
+  return res;
+}
+
 DBEngine *ConstructDBEngine()
 {
   DBEngine *dbEngine = malloc(sizeof(DBEngine));
@@ -98,6 +112,7 @@ DBEngine *ConstructDBEngine()
   dbEngine->openConnection = &openConnection;
   dbEngine->closeConnection = &closeConnection;
   dbEngine->applyDbChanges = &applyDbChanges;
+  dbEngine->searchDatabases = &searchDatabases;
   return dbEngine;
 }
 

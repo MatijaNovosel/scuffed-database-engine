@@ -12,6 +12,7 @@ typedef struct
   int (*dbExists)(void *self, char *dbName);
   void (*openConnection)(void *self);
   void (*closeConnection)(void *self);
+  char **(*searchDatabases)(void *self, char *dbName);
 } DBEngine;
 
 DBEngine *ConstructDBEngine();
@@ -22,3 +23,4 @@ int dbExists(void *self, char *dbName);
 void openConnection(void *self);
 void closeConnection(void *self);
 void applyDbChanges(void *self);
+char **searchDatabases(void *self, char *dbName);

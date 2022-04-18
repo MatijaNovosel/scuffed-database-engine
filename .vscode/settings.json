@@ -2,7 +2,8 @@
   "files.associations": {
     "memory.h": "c",
     "corecrt_memory.h": "c",
-    "stdlib.h": "c"
+    "stdlib.h": "c",
+    "models.h": "c"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }
